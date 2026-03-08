@@ -1,19 +1,23 @@
-# Micro AI Tools
+# AI Quiz Generator
 
-A growing portfolio of focused AI tools — each solving one real-world problem.
-Built with FastAPI + Groq (free tier). New tools are added as modules; no separate backends.
+Turn your notes, PDFs, and DOCX files into ready-to-use multiple-choice quizzes. Pick topics, upload or paste source material, choose difficulty and question count — get a quiz with explanations.
 
-## Live tools
+## Features
 
-| Tool | Description | Status |
-|------|-------------|--------|
-| Quiz Generator | Turn notes/PDFs into MCQ quizzes | Live |
+- **Input:** Topics (one per line or comma-separated) + source material
+- **Sources:** Upload PDF/DOCX and/or paste text; you can combine both
+- **Controls:** Number of questions (3–30), difficulty (easy / medium / hard / mixed)
+- **Output:** Multiple-choice questions with one correct answer and a short explanation per question
+- **UI:** Dark theme, two-pane layout (inputs left, generated quiz right)
+
+No accounts, no storage — runs on your machine or your deployment.
 
 ## Local setup
 
 ### Prerequisites
+
 - Python 3.10+
-- A free [Groq API key](https://console.groq.com/)
+- A [Groq API key](https://console.groq.com/) (free tier is enough)
 
 ### Steps
 
@@ -41,76 +45,45 @@ PLATFORM_GROQ_API_KEY=your_groq_key_here
 Run the server:
 
 ```bash
-python -m uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
----
-
 ## Project structure
 
 ```
-Micro-AI-tools/
-├── main.py                   ← registers all tool routers
+├── main.py                     # FastAPI app, quiz router + frontend mount
 ├── core/
-│   ├── config.py             ← shared env vars (PLATFORM_ prefix)
-│   ├── llm.py                ← shared LLM client + key rotation
-│   └── file_extract.py       ← shared PDF/DOCX extraction
+│   ├── config.py               # PLATFORM_* env vars
+│   ├── llm.py                  # Groq/OpenAI client, key rotation
+│   └── file_extract.py         # PDF/DOCX text extraction
 ├── tools/
-│   └── quiz_generator/       ← Tool 1
-│       ├── models.py
-│       ├── service.py
-│       ├── router.py
+│   └── quiz_generator/
+│       ├── models.py           # QuizRequest, QuizResponse, etc.
+│       ├── service.py          # Quiz generation logic
+│       ├── router.py           # /api/quiz/generate, /api/quiz/generate-from-files
 │       └── frontend/
+│           ├── index.html
+│           └── main.js
 ├── requirements.txt
-├── Procfile                  ← Railway deployment
+├── Procfile                    # Railway: web = uvicorn main:app ...
 └── .env.example
 ```
-
----
-
-## Adding a new tool
-
-1. Create `tools/<tool_name>/` with these files:
-
-```
-tools/your_tool/
-├── __init__.py
-├── models.py       ← Pydantic request/response models
-├── service.py      ← business logic, calls get_llm_client()
-├── router.py       ← FastAPI APIRouter with endpoints
-└── frontend/
-    ├── index.html
-    └── main.js
-```
-
-2. Register it in `main.py`:
-
-```python
-from tools.your_tool.router import router as your_tool_router
-app.include_router(your_tool_router, prefix="/api")
-```
-
-3. That's it. The tool is live on the same deployment.
-
----
 
 ## Environment variables
 
 | Variable | Required | Description |
-|----------|----------|-------------|
-| `PLATFORM_GROQ_API_KEY` | Yes | Primary LLM key (Groq free tier) |
+|---------|----------|-------------|
+| `PLATFORM_GROQ_API_KEY` | Yes | Groq API key (primary LLM) |
 | `PLATFORM_GROQ_API_KEY_2` | No | Second key for rotation |
 | `PLATFORM_GROQ_API_KEY_3` | No | Third key for rotation |
-| `PLATFORM_OPENAI_API_KEY` | No | OpenAI fallback |
-
----
+| `PLATFORM_OPENAI_API_KEY` | No | OpenAI fallback if no Groq keys |
 
 ## Tech stack
 
 - **Backend:** Python, FastAPI
-- **LLM:** Groq (Llama 3.3 70B) / OpenAI fallback
+- **LLM:** Groq (Llama 3.3 70B) with optional OpenAI fallback
 - **File parsing:** pypdf, python-docx
-- **Deployment:** Railway
-- **Analytics:** Umami
+- **Frontend:** HTML, CSS, JS (no build step)
+- **Deploy:** Railway (Procfile included), Umami for analytics
